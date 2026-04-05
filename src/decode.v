@@ -60,15 +60,25 @@ module tinyqv_decoder #(parameter REG_ADDR_BITS=4) (
         is_ret = 0;
 
         if (instr[1:0] == 2'b11) begin
+            // All Load insns (I-Type)
             is_load    =  (instr[6:2] == 5'b00000); // rd <- mem[rs1+Iimm]
+            // All ALU immediate ops (I-Type)
             is_alu_imm =  (instr[6:2] == 5'b00100); // rd <- rs1 OP Iimm
+            // Add Upper Immediate to PC (I-Type)
             is_auipc   =  (instr[6:2] == 5'b00101); // rd <- PC + Uimm
+            // Store (S-Type)
             is_store   =  (instr[6:2] == 5'b01000); // mem[rs1+Simm] <- rs2
+            // All ALU ops (R-Type)
             is_alu_reg =  (instr[6:2] == 5'b01100); // rd <- rs1 OP rs2
+            // Load Upper Immediate (I-Type)
             is_lui     =  (instr[6:2] == 5'b01101); // rd <- Uimm
+            // Compare and Jump (B-Type)
             is_branch  =  (instr[6:2] == 5'b11000); // if(rs1 OP rs2) PC<-PC+Bimm
+            // Jump and Link Register (I-Type)
             is_jalr    =  (instr[6:2] == 5'b11001); // rd <- PC+4; PC<-rs1+Iimm
+            // Jump and Link
             is_jal     =  (instr[6:2] == 5'b11011); // rd <- PC+4; PC<-PC+Jimm
+            // Handle CNRs
             is_system  =  (instr[6:2] == 5'b11100); // rd <- csr - NYI
 
             // Determine immediate.  Hopefully muxing here is reasonable.

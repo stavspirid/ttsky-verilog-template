@@ -60,6 +60,7 @@ module tinyQV (
   wire        instr_fetch_stopped;
   wire [15:0] instr_data;
   wire        instr_ready;
+  // Data Bus coming directly out of the CPU core
   wire [27:0] qv_data_addr;
   wire  [1:0] qv_data_write_n;
   wire  [1:0] qv_data_read_n;
@@ -73,18 +74,28 @@ module tinyQV (
   wire        mem_data_ready;
   wire [31:0] mem_data_from_read;
 
-  wire is_mem = qv_data_addr[27:25] == 0;
+// is_mem = 1 => CPU wants to access QSPI memory
+// is_mem = 0 => CPU wants to access peripherals
+  wire is_mem = qv_data_addr[27:25] == 3'b000;
+
+// Routes the inbound data back to CPU from memory controller or the peripherals
+// data_ready and data_in coming from project.v
   assign qv_data_ready = is_mem ? mem_data_ready : data_ready;
   assign qv_data_from_read = is_mem ? mem_data_from_read : data_in;
 
-  assign mem_data_write_n = is_mem ? qv_data_write_n : 2'b11;
-  assign mem_data_read_n =  is_mem ? qv_data_read_n  : 2'b11;
 
+  
+// Routes the outbound data from CPU to memory controller or the peripherals
+  assign mem_data_write_n = is_mem ? qv_data_write_n : 2'b11;   // 2'b11 means idle QSPI memory (no write)
+  assign mem_data_read_n =  is_mem ? qv_data_read_n  : 2'b11;   // 2'b11 means idle QSPI memory (no read)
+
+// Broacasts 28-bit address to peripheral (always) but is ingnored if read/write is disabled below
   assign data_addr = qv_data_addr;
+// Routes the read/write signals and data to the peripherals when not accessing memory
   assign data_write_n =       !is_mem ? qv_data_write_n       : 2'b11;
   assign data_read_n =        !is_mem ? qv_data_read_n        : 2'b11;
-  assign data_read_complete = !is_mem ? qv_data_read_complete : 0;
-  assign data_out = qv_data_to_write;
+  assign data_read_complete = !is_mem ? qv_data_read_complete : 0; // read_complete flag for peripherals
+  assign data_out = qv_data_to_write;   // Routes 32-bit data to peripherals, but is ignored if is_mem==1
 
   // Use a positive edge triggered reset for the CPU, to improve timing
   // The CPU doesn't use async reset.
@@ -161,10 +172,13 @@ module tinyQV (
         .debug_stall_txn(debug_stall_txn),
         .debug_stop_txn(debug_stop_txn)
     );
-
+    // The signal the memory controller sends to the CPU to say that QSPI read was successful
     assign debug_instr_ready = instr_ready;
+    // The signal to say that a jump occured and the instruction pipeline is flushed
     assign debug_fetch_restart = instr_fetch_restart;
+    // To monitor when a LW or SW is finished (both for memory and peripherals)
     assign debug_data_ready = qv_data_ready;
+    // To monitor burst read/write transactions
     assign debug_data_continue = qv_data_continue;
 
 endmodule
