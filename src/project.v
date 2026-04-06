@@ -5,7 +5,7 @@
 
 `default_nettype none
 
-module tt_um_MichaelBell_tinyQV (
+module tt_um_authQV (
     input  wire [7:0] ui_in,    // Dedicated inputs
     output wire [7:0] uo_out,   // Dedicated outputs
 /*verilator lint_off UNUSEDSIGNAL*/
@@ -19,18 +19,19 @@ module tt_um_MichaelBell_tinyQV (
     input  wire       clk,
     input  wire       rst_n
 );
+    // Assign all IOs to 0 for safety.
+    // assign uo_out  = 8'b0;
+    // assign uio_out = 8'b0;
+    // assign uio_oe  = 8'b0;
+
+
 
     // Address to peripheral map
     localparam PERI_NONE = 4'hF;
     localparam PERI_GPIO_OUT = 4'h0;
     localparam PERI_GPIO_IN = 4'h1;
     localparam PERI_GPIO_OUT_SEL = 4'h3;
-    localparam PERI_UART = 4'h4;
-    localparam PERI_UART_STATUS = 4'h5;
-    localparam PERI_DEBUG_UART = 4'h6;
-    localparam PERI_DEBUG_UART_STATUS = 4'h7;
-    localparam PERI_SPI = 4'h8;
-    localparam PERI_SPI_STATUS = 4'h9;
+ 
     localparam PERI_DEBUG = 4'hC;
 
     // Register the reset on the negative edge of clock for safety.
@@ -55,8 +56,8 @@ module tt_um_MichaelBell_tinyQV (
     wire [27:0] addr;
     wire  [1:0] write_n;
     wire  [1:0] read_n;
-    wire        read_complete;
 /*verilator lint_off UNUSEDSIGNAL*/
+    wire        read_complete;
     wire [31:0] data_to_write;  // Currently only bottom byte used.
 /*verilator lint_on UNUSEDSIGNAL*/
 
@@ -80,16 +81,6 @@ module tt_um_MichaelBell_tinyQV (
     wire [3:0] debug_rd;
 
     // Peripheral IOs on ui_in and uo_out
-    wire       spi_miso  = ui_in[2];
-    wire       uart_rxd  = ui_in[7];
-
-    wire       spi_cs;
-    wire       spi_sck;
-    wire       spi_mosi;
-    wire       spi_dc;
-    wire       uart_txd;
-    wire       uart_rts;
-    wire       debug_uart_txd;
     wire       debug_signal;
     reg  [7:0] gpio_out_sel;
     reg  [7:0] gpio_out;
@@ -102,27 +93,15 @@ module tt_um_MichaelBell_tinyQV (
     reg debug_register_data;
     reg [3:0] debug_rd_r;
 
-    // UART
-    wire uart_tx_busy;
-    wire uart_rx_valid;
-    wire [7:0] uart_rx_data;
-    wire uart_tx_start = write_n != 2'b11 && connect_peripheral == PERI_UART;
-
-    // Debug UART - runs fast to reduce the width of the count necessary for the divider!
-    wire debug_uart_tx_busy;
-    wire debug_uart_tx_start = write_n != 2'b11 && connect_peripheral == PERI_DEBUG_UART;
-
-    // SPI
-    wire spi_start = write_n != 2'b11 && connect_peripheral == PERI_SPI;
-    wire [7:0] spi_data;
-    wire spi_busy;
-
     // Interrupt requests
     reg [1:0] ui_in_reg;
     always @(posedge clk) begin
         ui_in_reg <= ui_in[1:0];
     end
-    wire [3:0] interrupt_req = {!uart_tx_busy, uart_rx_valid, ui_in_reg[1:0]};
+
+    // Removed UART interrupts
+    wire [3:0] interrupt_req = {2'b00, ui_in_reg[1:0]};
+    wire timer_interrupt = 1'b0; // FIXME: Add timer interrupt
 
     tinyQV i_tinyqv(
         .clk(clk),
@@ -137,6 +116,7 @@ module tt_um_MichaelBell_tinyQV (
         .data_ready(data_ready),
         .data_in(data_from_read),
 
+        .timer_interrupt(timer_interrupt),   // FIXME: Check timer interrupt
         .interrupt_req(interrupt_req),
 
         .spi_data_in(qspi_data_in),
@@ -164,17 +144,13 @@ module tt_um_MichaelBell_tinyQV (
         .debug_rd(debug_rd)
     );
 
-    assign uo_out[0] = gpio_out_sel[0] ? gpio_out[0] : uart_txd;
-    assign uo_out[1] = gpio_out_sel[1] ? gpio_out[1] : uart_rts;
-    assign uo_out[2] = gpio_out_sel[2] ? gpio_out[2] : 
-                       debug_register_data ? debug_rd_r[0] : spi_dc;
-    assign uo_out[3] = gpio_out_sel[3] ? gpio_out[3] : 
-                       debug_register_data ? debug_rd_r[1] : spi_mosi;
-    assign uo_out[4] = gpio_out_sel[4] ? gpio_out[4] : 
-                       debug_register_data ? debug_rd_r[2] : spi_cs;
-    assign uo_out[5] = gpio_out_sel[5] ? gpio_out[5] : 
-                       debug_register_data ? debug_rd_r[3] : spi_sck;
-    assign uo_out[6] = gpio_out_sel[6] ? gpio_out[6] : debug_uart_txd;
+    assign uo_out[0] = gpio_out_sel[0] ? gpio_out[0] : 1'b0;
+    assign uo_out[1] = gpio_out_sel[1] ? gpio_out[1] : 1'b0;
+    assign uo_out[2] = gpio_out_sel[2] ? gpio_out[2] : (debug_register_data ? debug_rd_r[0] : 1'b0);
+    assign uo_out[3] = gpio_out_sel[3] ? gpio_out[3] : (debug_register_data ? debug_rd_r[1] : 1'b0);
+    assign uo_out[4] = gpio_out_sel[4] ? gpio_out[4] : (debug_register_data ? debug_rd_r[2] : 1'b0);
+    assign uo_out[5] = gpio_out_sel[5] ? gpio_out[5] : (debug_register_data ? debug_rd_r[3] : 1'b0);
+    assign uo_out[6] = gpio_out_sel[6] ? gpio_out[6] : 1'b0;
     assign uo_out[7] = gpio_out_sel[7] ? gpio_out[7] : debug_signal;
 
     always @(*) begin
@@ -190,11 +166,6 @@ module tt_um_MichaelBell_tinyQV (
             PERI_GPIO_OUT:    data_from_read = {24'h0, uo_out};
             PERI_GPIO_IN:     data_from_read = {24'h0, ui_in};
             PERI_GPIO_OUT_SEL:data_from_read = {24'h0, gpio_out_sel};
-            PERI_UART:        data_from_read = {24'h0, uart_rx_data};
-            PERI_UART_STATUS: data_from_read = {30'h0, uart_rx_valid, uart_tx_busy};
-            PERI_DEBUG_UART_STATUS: data_from_read = {31'h0, debug_uart_tx_busy};
-            PERI_SPI:         data_from_read = {24'h0, spi_data};
-            PERI_SPI_STATUS:  data_from_read = {31'h0, spi_busy};
             default:          data_from_read = 32'hFFFF_FFFF;
         endcase
     end

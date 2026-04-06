@@ -1,11 +1,11 @@
 # Tiny Tapeout project information
 project:
-  title:        ""      # Project title
-  author:       ""      # Your name
+  title:        "authQV RISC-V CPU"      # Project title
+  author:       "ECE-AUTh"      
   discord:      ""      # Your discord username, for communication and automatically assigning you a Tapeout role (optional)
-  description:  ""      # One line description of what your project does
+  description:  "A minimal RISC-V (RV32I) CPU with QSPI flash/RAM memory interface, GPIO, and debug outputs, based on TinyQV"
   language:     "Verilog" # other examples include SystemVerilog, Amaranth, VHDL, etc
-  clock_hz:     0       # Clock frequency in Hz (or 0 if not applicable)
+  clock_hz:     50000000       # Clock frequency in Hz (or 0 if not applicable)
 
   # How many tiles your design occupies? A single tile is about 167x108 uM.
   tiles: "1x1"          # Valid values: 1x1, 1x2, 2x2, 3x2, 4x2, 6x2 or 8x2
@@ -32,34 +32,34 @@ project:
 # This section is for the datasheet/website. Use descriptive names (e.g., RX, TX, MOSI, SCL, SEG_A, etc.).
 pinout:
   # Inputs
-  ui[0]: ""
-  ui[1]: ""
+  ui[0]: "IRQ0 (rising-edge interrupt)"
+  ui[1]: "IRQ1 (rising-edge interrupt)"
   ui[2]: ""
-  ui[3]: ""
-  ui[4]: ""
+  ui[3]: "Debug mode select (latched at reset)"
+  ui[4]: "GPIO out sel[7] init (latched at reset, inverted)"
   ui[5]: ""
-  ui[6]: ""
+  ui[6]: "Debug signal select [MSB]"
   ui[7]: ""
 
   # Outputs
-  uo[0]: ""
-  uo[1]: ""
-  uo[2]: ""
-  uo[3]: ""
-  uo[4]: ""
-  uo[5]: ""
-  uo[6]: ""
-  uo[7]: ""
+  uo[0]: "GPIO out 0"
+  uo[1]: "GPIO out 1"
+  uo[2]: "GPIO out 2 / debug rd[0]"
+  uo[3]: "GPIO out 3 / debug rd[1]"
+  uo[4]: "GPIO out 4 / debug rd[2]"
+  uo[5]: "GPIO out 5 / debug rd[3]"
+  uo[6]: "GPIO out 6"
+  uo[7]: "GPIO out 7 / debug signal"
 
   # Bidirectional pins
-  uio[0]: ""
-  uio[1]: ""
-  uio[2]: ""
-  uio[3]: ""
-  uio[4]: ""
-  uio[5]: ""
-  uio[6]: ""
-  uio[7]: ""
+  uio[0]: "Flash CS (active low, output)"
+  uio[1]: "QSPI SD0 / MOSI"
+  uio[2]: "QSPI SD1 / MISO"
+  uio[3]: "QSPI SCK (output)"
+  uio[4]: "QSPI SD2"
+  uio[5]: "QSPI SD3"
+  uio[6]: "RAM A CS (active low, output)"
+  uio[7]: "RAM B CS (active low, output)"
 
 # Do not change!
 yaml_version: 6
