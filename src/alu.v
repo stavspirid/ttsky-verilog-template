@@ -27,7 +27,7 @@ module tinyqv_alu (
     input [3:0] a,
     input [3:0] b,
     input cy_in,
-    input cmp_in,
+    input cmp_in,  // Holds the result of the previous 4-bit comparison
     output reg [3:0] d,
     output cy_out,
     output reg cmp_res   // On final cycle, 1 for SLT/SLTU/EQ
@@ -48,6 +48,7 @@ module tinyqv_alu (
         endcase
     end
 
+    // Other bits not checked because CPU reads cmp_res only when executing compare insns.
     always @(*) begin
         if (op[0])      cmp_res = ~sum[4];
         else if (op[1]) cmp_res = a[3] ^ b_for_add[3] ^ sum[4];

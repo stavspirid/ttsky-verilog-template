@@ -122,27 +122,30 @@ module tinyqv_cpu #(parameter NUM_REGS=16, parameter REG_ADDR_BITS=4) (
 
     reg interrupt_core;
 
-    reg instr_valid;
+    reg instr_valid;    // instruction buffer has a valid next instruction
 
     wire [31:0] pc;
     wire [31:0] next_pc_for_core;
 
     wire [27:0] addr_out;
-    wire address_ready;
-    wire instr_complete_core;
+    wire address_ready;     // GOes high when calculation hash finished
+    wire instr_complete_core;   // the core has (not) signalled completion 
     wire branch;
     wire [23:1] return_addr;
     wire interrupt_pending;
+    // Used to id burst reads/writes
     wire any_additional_mem_ops = additional_mem_ops != 3'b000;
 
     reg [4:2] counter_hi;
-    wire [4:0] counter = {counter_hi, 2'b00};
+    wire [4:0] counter = {counter_hi, 2'b00};   // Increments every cycle by 4
 
-    reg no_write_in_progress;
+    reg no_write_in_progress;   // a load/store is pending but the previous memory transaction hasn't finished
     reg load_started;
+    // Stall core on invalid insn or cur insn is sw/lw but previous mem write is not complete
     wire stall_core = !instr_valid || ((is_store || is_load) && !no_write_in_progress);
     wire instr_complete = instr_complete_core && !stall_core && !any_additional_mem_ops;
 
+    // Bit 0 is always ignored since insns are either 2B(compressed) or 4B(standard)
     reg [2:1] pc_offset;
     reg [3:1] instr_write_offset;
     reg was_early_branch;
@@ -171,6 +174,7 @@ module tinyqv_cpu #(parameter NUM_REGS=16, parameter REG_ADDR_BITS=4) (
             addr_offset <= 2'b00;
             interrupt_core <= 0;
         end else if (any_additional_mem_ops && instr_complete_core && !stall_core) begin
+            // Burst read/write
             rs2 <= rs2 + {3'b000, mem_op_increment_reg};
             rd <= rd + 4'b0001;
             additional_mem_ops <= additional_mem_ops - 3'b001;
@@ -180,6 +184,7 @@ module tinyqv_cpu #(parameter NUM_REGS=16, parameter REG_ADDR_BITS=4) (
             interrupt_core <= 1;
         end else if ((counter_hi == 3'd7 && !instr_valid) || instr_complete || branch) begin
             interrupt_core <= 0;
+            // Latch _de signals into stable registers
             if ({1'b0,instr_len_de} <= instr_avail_len) begin
                 imm <= imm_de;
                 is_load <= is_load_de;
@@ -222,6 +227,7 @@ module tinyqv_cpu #(parameter NUM_REGS=16, parameter REG_ADDR_BITS=4) (
         end
     end
 
+    // Data Ready Logic
     wire [3:0] data_out_slice;
     reg data_ready_latch;
     reg data_ready_sync;
@@ -234,8 +240,8 @@ module tinyqv_cpu #(parameter NUM_REGS=16, parameter REG_ADDR_BITS=4) (
         end else begin
             counter_hi <= counter_hi + 1;
 
-            if (counter_hi == 3'd0) begin
-                data_ready_latch <= 0;
+            if (counter_hi == 3'd0) begin   // if in start of 8-cycle insn
+                data_ready_latch <= 0;      // Make latched data not ready
                 if (data_ready || data_ready_latch) begin
                     data_ready_sync <= 1;
                 end else begin
@@ -338,7 +344,7 @@ module tinyqv_cpu #(parameter NUM_REGS=16, parameter REG_ADDR_BITS=4) (
         .rd(rd),
 
         .counter(counter[4:2]),
-        .pc(pc[counter+:4]),
+        .pc(pc[counter+:4]),    // Pass a 4-bit wide slice of the PC from counter and upwards
         .next_pc(next_pc_for_core[counter+:4]),
         .data_in(data_in[counter+:4]),
         .load_data_ready(data_ready_core),
