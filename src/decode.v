@@ -40,24 +40,27 @@ module tinyqv_decoder #(parameter REG_ADDR_BITS=4) (
     wire [31:0] Bimm = {{20{instr[31]}}, instr[7],instr[30:25],instr[11:8],1'b0};
     wire [31:0] Jimm = {{12{instr[31]}}, instr[19:12],instr[20],instr[30:21],1'b0};
 
-    // Compressed immediates
-    wire [31:0] CLWSPimm     = {24'b0, instr[3:2], instr[12], instr[6:4], 2'b00};
-    wire [31:0] CSWSPimm     = {24'b0, instr[8:7], instr[12:9], 2'b00};
-    wire [31:0] CLSWimm      = {25'b0, instr[5], instr[12:10], instr[6], 2'b00};  // LW and SW
-    wire [31:0] CLSHimm      = {30'b0, instr[5], 1'b0};  // LH(U) and SH
-    wire [31:0] CLSBimm      = {30'b0, instr[5], instr[6]};  // LBU and SB
-    wire [31:0] CJimm        = {{21{instr[12]}}, instr[8], instr[10:9], instr[6], instr[7], instr[2], instr[11], instr[5:3], 1'b0};
-    wire [31:0] CBimm        = {{24{instr[12]}}, instr[6:5], instr[2], instr[11:10], instr[4:3], 1'b0};
-    wire [31:0] CALUimm      = {{27{instr[12]}}, instr[6:2]};          // ADDI, LI, shifts, ANDI
-    wire [31:0] CLUIimm      = {{15{instr[12]}}, instr[6:2], 12'b0};
-    wire [31:0] CADDI16SPimm = {{23{instr[12]}}, instr[4:3], instr[5], instr[2], instr[6], 4'b0};
-    wire [31:0] CADDI4SPimm  = {22'b0, instr[10:7], instr[12:11], instr[5], instr[6], 2'b0};
-    wire [31:0] CSCXTimm     = {{23{instr[12]}}, instr[9:7], instr[10], instr[11], 4'b0};
 
     always @(*) begin
         additional_mem_ops = 3'b000;
         mem_op_increment_reg = 1;
         is_ret = 0;
+        is_load    = 0;
+        is_alu_imm = 0;
+        is_auipc   = 0;
+        is_store   = 0;
+        is_alu_reg = 0;
+        is_lui     = 0;
+        is_branch  = 0;
+        is_jalr    = 0;
+        is_jal     = 0;
+        is_system  = 0;
+        imm    = {32{1'bx}};
+        alu_op = 4'b0000;
+        mem_op = 3'bxxx;
+        rs1 = {REG_ADDR_BITS{1'bx}};
+        rs2 = {REG_ADDR_BITS{1'bx}};
+        rd  = {REG_ADDR_BITS{1'bx}};
 
         if (instr[1:0] == 2'b11) begin
             // All Load insns (I-Type)

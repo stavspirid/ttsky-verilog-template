@@ -6,7 +6,12 @@ ENV PDK_ROOT=/home/vscode/ttsetup/pdk
 ENV PDK=sky130A
 
 RUN apt update
-RUN apt install -y iverilog gtkwave python3 python3-pip python3-venv python3-tk python-is-python3 libcairo2 verilator libpng-dev libqhull-dev
+RUN apt install -y iverilog gtkwave python3 python3-pip python3-venv python3-tk python-is-python3 libcairo2 verilator libpng-dev libqhull-dev curl
+
+# Install OSS CAD Suite (provides up-to-date yosys, nextpnr, etc.)
+RUN curl -L https://github.com/YosysHQ/oss-cad-suite-build/releases/download/2026-04-05/oss-cad-suite-linux-x64-20260405.tgz | \
+    tar zxf - -C /opt && \
+    ln -s /opt/oss-cad-suite/bin/yosys /usr/local/bin/yosys
 
 # Clone tt-support-tools
 RUN mkdir -p /ttsetup

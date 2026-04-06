@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs ls:*)",
+      "Bash(yosys --version)",
+      "Bash(curl -s \"https://api.github.com/repos/YosysHQ/oss-cad-suite-build/releases/latest\")",
+      "Bash(python3 -c \"import sys,json; r=json.load\\(sys.stdin\\); print\\(r['tag_name']\\); [print\\(a['browser_download_url']\\) for a in r['assets'] if 'linux-x64' in a['name']]\")",
+      "Bash(curl -s https://api.github.com/repos/YosysHQ/oss-cad-suite-build/releases/latest)",
+      "Bash(python3 -c \"import sys,json; r=json.load\\(sys.stdin\\); [print\\(a['browser_download_url']\\) for a in r['assets'] if 'linux-x64' in a['name']]\")",
+      "Bash(docker exec wizardly_sammet:*)"
+    ]
+  }
+}
