@@ -19,7 +19,20 @@
       "Bash(curl:*)",
       "Read(//tmp/**)",
       "Bash(gh api:*)",
-      "Bash(gh search:*)"
+      "Bash(gh search:*)",
+      "Bash(yosys -p \"read_verilog -sv src/qspi_ctrl.v; synth -top qspi_controller; stat\")",
+      "Bash(grep -E 'Number of cells|Number of wires|^\\\\s+\\\\$_')",
+      "Bash(yosys -p \"read_verilog -sv src/qspi_ctrl.v src/mem_ctrl.v; synth -top tinyqv_mem_ctrl; stat\")",
+      "Bash(yosys -q -p \"read_verilog -sv src/project.v src/tt_mem_bridge.v src/mem_ctrl.v src/qspi_ctrl.v src/latch_reg.v; synth -top tt_um_authQV\")",
+      "Bash(yosys -p \"read_verilog -sv src/project.v src/tt_mem_bridge.v src/mem_ctrl.v src/qspi_ctrl.v src/latch_reg.v; synth -top tt_um_authQV\")",
+      "Bash(git mv:*)",
+      "Bash(yosys -p 'read_verilog -sv __TRACKED_VAR__ src/latch_reg.v 2>/dev/null; synth')",
+      "Bash(yosys -p \"read_verilog -sv src/tt_mem_bridge.v; synth -top tt_mem_bridge\")",
+      "Bash(yosys -p \"read_verilog -sv src/qspi_ctrl.v src/latch_reg.v; synth -top qspi_controller\")",
+      "Bash(yosys -p \"read_verilog -sv src/mem_ctrl.v src/qspi_ctrl.v src/latch_reg.v; synth -top tinyqv_mem_ctrl\")",
+      "Bash(make)",
+      "Bash(python3 -c \"import cocotb; print\\(cocotb.__version__\\)\")",
+      "Read(//home/ktsoupos/.local/bin/**)"
     ]
   }
 }
