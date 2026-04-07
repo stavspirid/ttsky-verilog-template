@@ -19,23 +19,13 @@ module tt_um_authQV (
     input  wire       clk,
     input  wire       rst_n
 );
-    // Assign all IOs to 0 for safety.
-    // assign uo_out  = 8'b0;
-    // assign uio_out = 8'b0;
-    // assign uio_oe  = 8'b0;
-
-
 
     // Address to peripheral map
-    localparam PERI_NONE = 4'hF;
+    localparam PERI_NONE     = 4'hF;
     localparam PERI_GPIO_OUT = 4'h0;
-    localparam PERI_GPIO_IN = 4'h1;
-    localparam PERI_GPIO_OUT_SEL = 4'h3;
- 
-    localparam PERI_DEBUG = 4'hC;
+    localparam PERI_GPIO_IN  = 4'h1;
 
     // Register the reset on the negative edge of clock for safety.
-    // This also allows the option of async reset in the design, which might be preferable in some cases
     /* verilator lint_off SYNCASYNCNET */
     reg rst_reg_n;
     /* verilator lint_on SYNCASYNCNET */
@@ -49,7 +39,7 @@ module tt_um_authQV (
     wire       qspi_flash_select;
     wire       qspi_ram_a_select;
     wire       qspi_ram_b_select;
-    assign uio_out = {qspi_ram_b_select, qspi_ram_a_select, qspi_data_out[3:2], 
+    assign uio_out = {qspi_ram_b_select, qspi_ram_a_select, qspi_data_out[3:2],
                       qspi_clk_out, qspi_data_out[1:0], qspi_flash_select};
     assign uio_oe = rst_n ? {2'b11, qspi_data_oe[3:2], 1'b1, qspi_data_oe[1:0], 1'b1} : 8'h00;
 
@@ -64,44 +54,12 @@ module tt_um_authQV (
     wire        data_ready;
     reg [31:0] data_from_read;
 
-    wire       debug_instr_complete;
-    wire       debug_instr_ready;
-    wire       debug_instr_valid;
-    wire       debug_fetch_restart;
-    wire       debug_data_ready;
-    wire       debug_interrupt_pending;
-    wire       debug_branch;
-    wire       debug_early_branch;
-    wire       debug_ret;
-    wire       debug_reg_wen;
-    wire       debug_counter_0;
-    wire       debug_data_continue;
-    wire       debug_stall_txn;
-    wire       debug_stop_txn;
-    wire [3:0] debug_rd;
-
     // Peripheral IOs on ui_in and uo_out
-    wire       debug_signal;
-    reg  [7:0] gpio_out_sel;
     reg  [7:0] gpio_out;
 
     // All transactions to peripherals complete immediately
     assign data_ready = 1'b1;
     reg [3:0] connect_peripheral;
-
-    // Debug
-    reg debug_register_data;
-    reg [3:0] debug_rd_r;
-
-    // Interrupt requests
-    reg [1:0] ui_in_reg;
-    always @(posedge clk) begin
-        ui_in_reg <= ui_in[1:0];
-    end
-
-    // Removed UART interrupts
-    wire [3:0] interrupt_req = {2'b00, ui_in_reg[1:0]};
-    wire timer_interrupt = 1'b0; // FIXME: Add timer interrupt
 
     tinyQV i_tinyqv(
         .clk(clk),
@@ -116,45 +74,19 @@ module tt_um_authQV (
         .data_ready(data_ready),
         .data_in(data_from_read),
 
-        .timer_interrupt(timer_interrupt),   // FIXME: Check timer interrupt
-        .interrupt_req(interrupt_req),
-
         .spi_data_in(qspi_data_in),
         .spi_data_out(qspi_data_out),
         .spi_data_oe(qspi_data_oe),
         .spi_clk_out(qspi_clk_out),
         .spi_flash_select(qspi_flash_select),
         .spi_ram_a_select(qspi_ram_a_select),
-        .spi_ram_b_select(qspi_ram_b_select),
-
-        .debug_instr_complete(debug_instr_complete),
-        .debug_instr_ready(debug_instr_ready),
-        .debug_instr_valid(debug_instr_valid),
-        .debug_fetch_restart(debug_fetch_restart),
-        .debug_data_ready(debug_data_ready),
-        .debug_interrupt_pending(debug_interrupt_pending),
-        .debug_branch(debug_branch),
-        .debug_early_branch(debug_early_branch),
-        .debug_ret(debug_ret),
-        .debug_reg_wen(debug_reg_wen),
-        .debug_counter_0(debug_counter_0),
-        .debug_data_continue(debug_data_continue),
-        .debug_stall_txn(debug_stall_txn),
-        .debug_stop_txn(debug_stop_txn),
-        .debug_rd(debug_rd)
+        .spi_ram_b_select(qspi_ram_b_select)
     );
 
-    assign uo_out[0] = gpio_out_sel[0] ? gpio_out[0] : 1'b0;
-    assign uo_out[1] = gpio_out_sel[1] ? gpio_out[1] : 1'b0;
-    assign uo_out[2] = gpio_out_sel[2] ? gpio_out[2] : (debug_register_data ? debug_rd_r[0] : 1'b0);
-    assign uo_out[3] = gpio_out_sel[3] ? gpio_out[3] : (debug_register_data ? debug_rd_r[1] : 1'b0);
-    assign uo_out[4] = gpio_out_sel[4] ? gpio_out[4] : (debug_register_data ? debug_rd_r[2] : 1'b0);
-    assign uo_out[5] = gpio_out_sel[5] ? gpio_out[5] : (debug_register_data ? debug_rd_r[3] : 1'b0);
-    assign uo_out[6] = gpio_out_sel[6] ? gpio_out[6] : 1'b0;
-    assign uo_out[7] = gpio_out_sel[7] ? gpio_out[7] : debug_signal;
+    assign uo_out = gpio_out;
 
     always @(*) begin
-        if ({addr[27:6], addr[1:0]} == 24'h800000) 
+        if ({addr[27:6], addr[1:0]} == 24'h800000)
             connect_peripheral = addr[5:2];
         else
             connect_peripheral = PERI_NONE;
@@ -163,56 +95,19 @@ module tt_um_authQV (
     // Read data
     always @(*) begin
         case (connect_peripheral)
-            PERI_GPIO_OUT:    data_from_read = {24'h0, uo_out};
-            PERI_GPIO_IN:     data_from_read = {24'h0, ui_in};
-            PERI_GPIO_OUT_SEL:data_from_read = {24'h0, gpio_out_sel};
-            default:          data_from_read = 32'hFFFF_FFFF;
+            PERI_GPIO_OUT: data_from_read = {24'h0, gpio_out};
+            PERI_GPIO_IN:  data_from_read = {24'h0, ui_in};
+            default:       data_from_read = 32'hFFFF_FFFF;
         endcase
     end
 
     // GPIO Out
     always @(posedge clk) begin
         if (!rst_reg_n) begin
-            gpio_out_sel <= {!ui_in[4], 7'b0000000};
             gpio_out <= 0;
-        end
-        if (write_n != 2'b11) begin
+        end else if (write_n != 2'b11) begin
             if (connect_peripheral == PERI_GPIO_OUT) gpio_out <= data_to_write[7:0];
-            if (connect_peripheral == PERI_GPIO_OUT_SEL) gpio_out_sel <= data_to_write[7:0];
         end
     end
-
-    // Debug
-    always @(posedge clk) begin
-        if (!rst_reg_n)
-            debug_register_data <= ui_in[3];
-        else if (connect_peripheral == PERI_DEBUG)
-            debug_register_data <= data_to_write[0];
-    end
-
-    always @(posedge clk) begin
-        debug_rd_r <= debug_rd;
-    end
-
-    reg [15:0] debug_signals;
-    always @(*) begin
-        debug_signals  = {debug_instr_complete,
-                          debug_instr_ready,
-                          debug_instr_valid,
-                          debug_fetch_restart,
-                          read_n != 2'b11,
-                          write_n != 2'b11,
-                          debug_data_ready,
-                          debug_interrupt_pending,
-                          debug_branch,
-                          debug_early_branch,
-                          debug_ret,
-                          debug_reg_wen,
-                          debug_counter_0,
-                          debug_data_continue,
-                          debug_stall_txn,
-                          debug_stop_txn};
-    end
-    assign debug_signal = debug_signals[ui_in[6:3]];
 
 endmodule

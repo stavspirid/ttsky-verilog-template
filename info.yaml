@@ -21,7 +21,6 @@ project:
     - "tinyqv.v"
     - "alu.v"
     - "core.v"
-    - "counter.v"
     - "cpu.v"
     - "decode.v"
     - "mem_ctrl.v"

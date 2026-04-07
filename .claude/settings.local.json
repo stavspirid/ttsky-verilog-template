@@ -7,7 +7,19 @@
       "Bash(python3 -c \"import sys,json; r=json.load\\(sys.stdin\\); print\\(r['tag_name']\\); [print\\(a['browser_download_url']\\) for a in r['assets'] if 'linux-x64' in a['name']]\")",
       "Bash(curl -s https://api.github.com/repos/YosysHQ/oss-cad-suite-build/releases/latest)",
       "Bash(python3 -c \"import sys,json; r=json.load\\(sys.stdin\\); [print\\(a['browser_download_url']\\) for a in r['assets'] if 'linux-x64' in a['name']]\")",
-      "Bash(docker exec wizardly_sammet:*)"
+      "Bash(docker exec wizardly_sammet:*)",
+      "Bash(grep -E \"\\\\.\\(json|yaml|yml|txt\\)$\")",
+      "Bash(grep -r \"instruction\\\\|feature\\\\|support\\\\|implement\" /home/ktsoupos/riscv-cpu/ttsky-verilog-template/src/*.v)",
+      "Read(//opt/**)",
+      "Bash(find / -name \"verilator\" -type f)",
+      "Bash(yosys -p \"read_verilog -sv src/project.v src/tinyqv.v src/alu.v src/core.v src/cpu.v src/decode.v src/mem_ctrl.v src/qspi_ctrl.v src/register.v; hierarchy -top tt_um_authQV; proc; opt\")",
+      "Bash(yosys -p \"read_verilog -sv src/project.v src/tinyqv.v src/alu.v src/core.v src/cpu.v src/decode.v src/mem_ctrl.v src/qspi_ctrl.v src/register.v; hierarchy -top tt_um_authQV; proc; opt; stat\")",
+      "Bash(grep -iE \"warning|^\\\\$\")",
+      "Bash(yosys -p \"read_verilog -sv src/project.v src/tinyqv.v src/alu.v src/core.v src/cpu.v src/decode.v src/mem_ctrl.v src/qspi_ctrl.v src/register.v; synth -top tt_um_authQV; stat\")",
+      "Bash(curl:*)",
+      "Read(//tmp/**)",
+      "Bash(gh api:*)",
+      "Bash(gh search:*)"
     ]
   }
 }

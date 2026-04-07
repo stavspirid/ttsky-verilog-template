@@ -10,12 +10,11 @@ PROJECT_SOURCES = project.v \
                   tinyqv.v \
                   alu.v \
                   core.v \
-                  counter.v \
                   cpu.v \
                   decode.v \
                   mem_ctrl.v \
                   qspi_ctrl.v \
-                  register.v 
+                  register.v
 
 ifneq ($(GATES),yes)
 
