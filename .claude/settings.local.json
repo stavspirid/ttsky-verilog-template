@@ -32,7 +32,8 @@
       "Bash(yosys -p \"read_verilog -sv src/mem_ctrl.v src/qspi_ctrl.v src/latch_reg.v; synth -top tinyqv_mem_ctrl\")",
       "Bash(make)",
       "Bash(python3 -c \"import cocotb; print\\(cocotb.__version__\\)\")",
-      "Read(//home/ktsoupos/.local/bin/**)"
+      "Read(//home/ktsoupos/.local/bin/**)",
+      "Bash(yosys -p \"read_verilog -sv src/project.v src/tt_mem_bridge.v src/mem_ctrl.v src/qspi_ctrl.v; synth -top tt_um_authQV\")"
     ]
   }
 }
