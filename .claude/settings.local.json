@@ -33,7 +33,10 @@
       "Bash(make)",
       "Bash(python3 -c \"import cocotb; print\\(cocotb.__version__\\)\")",
       "Read(//home/ktsoupos/.local/bin/**)",
-      "Bash(yosys -p \"read_verilog -sv src/project.v src/tt_mem_bridge.v src/mem_ctrl.v src/qspi_ctrl.v; synth -top tt_um_authQV\")"
+      "Bash(yosys -p \"read_verilog -sv src/project.v src/tt_mem_bridge.v src/mem_ctrl.v src/qspi_ctrl.v; synth -top tt_um_authQV\")",
+      "Bash(iverilog -g2012 -Wall -o /tmp/authqv_lint.out src/project.v src/tt_mem_bridge.v src/mem_ctrl.v src/qspi_ctrl.v test/tb.v)",
+      "Bash(verilator --lint-only -Wall -Wno-DECLFILENAME --top-module tt_um_authQV src/project.v src/tt_mem_bridge.v src/mem_ctrl.v src/qspi_ctrl.v)",
+      "Bash(yosys -p \"read_verilog -sv src/project.v src/tt_mem_bridge.v src/mem_ctrl.v src/qspi_ctrl.v; hierarchy -check -top tt_um_authQV; proc; check -assert\")"
     ]
   }
 }
