@@ -7,15 +7,9 @@ FST ?= -fst # Use more efficient FST format
 TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
 PROJECT_SOURCES = project.v \
-                  tinyqv.v \
-                  alu.v \
-                  core.v \
-                  counter.v \
-                  cpu.v \
-                  decode.v \
+                  tt_mem_bridge.v \
                   mem_ctrl.v \
-                  qspi_ctrl.v \
-                  register.v 
+                  qspi_ctrl.v
 
 ifneq ($(GATES),yes)
 

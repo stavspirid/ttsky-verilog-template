@@ -13,7 +13,7 @@
     "CLOCK_PERIOD": 25.0,
     "DIE_AREA": [0, 0, 161.84, 110.64],
     "FP_CORE_UTIL": 40,
-    "PL_TARGET_DENSITY_PCT": 35,
+    "PL_TARGET_DENSITY_PCT": 50,
     "SYNTH_STRATEGY": "AREA 0",
     "RUN_KLAYOUT_XOR": false
 }

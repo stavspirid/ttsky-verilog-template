@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs ls:*)",
+      "Bash(yosys --version)",
+      "Bash(curl -s \"https://api.github.com/repos/YosysHQ/oss-cad-suite-build/releases/latest\")",
+      "Bash(python3 -c \"import sys,json; r=json.load\\(sys.stdin\\); print\\(r['tag_name']\\); [print\\(a['browser_download_url']\\) for a in r['assets'] if 'linux-x64' in a['name']]\")",
+      "Bash(curl -s https://api.github.com/repos/YosysHQ/oss-cad-suite-build/releases/latest)",
+      "Bash(python3 -c \"import sys,json; r=json.load\\(sys.stdin\\); [print\\(a['browser_download_url']\\) for a in r['assets'] if 'linux-x64' in a['name']]\")",
+      "Bash(docker exec wizardly_sammet:*)",
+      "Bash(grep -E \"\\\\.\\(json|yaml|yml|txt\\)$\")",
+      "Bash(grep -r \"instruction\\\\|feature\\\\|support\\\\|implement\" /home/ktsoupos/riscv-cpu/ttsky-verilog-template/src/*.v)",
+      "Read(//opt/**)",
+      "Bash(find / -name \"verilator\" -type f)",
+      "Bash(yosys -p \"read_verilog -sv src/project.v src/tinyqv.v src/alu.v src/core.v src/cpu.v src/decode.v src/mem_ctrl.v src/qspi_ctrl.v src/register.v; hierarchy -top tt_um_authQV; proc; opt\")",
+      "Bash(yosys -p \"read_verilog -sv src/project.v src/tinyqv.v src/alu.v src/core.v src/cpu.v src/decode.v src/mem_ctrl.v src/qspi_ctrl.v src/register.v; hierarchy -top tt_um_authQV; proc; opt; stat\")",
+      "Bash(grep -iE \"warning|^\\\\$\")",
+      "Bash(yosys -p \"read_verilog -sv src/project.v src/tinyqv.v src/alu.v src/core.v src/cpu.v src/decode.v src/mem_ctrl.v src/qspi_ctrl.v src/register.v; synth -top tt_um_authQV; stat\")",
+      "Bash(curl:*)",
+      "Read(//tmp/**)",
+      "Bash(gh api:*)",
+      "Bash(gh search:*)",
+      "Bash(yosys -p \"read_verilog -sv src/qspi_ctrl.v; synth -top qspi_controller; stat\")",
+      "Bash(grep -E 'Number of cells|Number of wires|^\\\\s+\\\\$_')",
+      "Bash(yosys -p \"read_verilog -sv src/qspi_ctrl.v src/mem_ctrl.v; synth -top tinyqv_mem_ctrl; stat\")",
+      "Bash(yosys -q -p \"read_verilog -sv src/project.v src/tt_mem_bridge.v src/mem_ctrl.v src/qspi_ctrl.v src/latch_reg.v; synth -top tt_um_authQV\")",
+      "Bash(yosys -p \"read_verilog -sv src/project.v src/tt_mem_bridge.v src/mem_ctrl.v src/qspi_ctrl.v src/latch_reg.v; synth -top tt_um_authQV\")",
+      "Bash(git mv:*)",
+      "Bash(yosys -p 'read_verilog -sv __TRACKED_VAR__ src/latch_reg.v 2>/dev/null; synth')",
+      "Bash(yosys -p \"read_verilog -sv src/tt_mem_bridge.v; synth -top tt_mem_bridge\")",
+      "Bash(yosys -p \"read_verilog -sv src/qspi_ctrl.v src/latch_reg.v; synth -top qspi_controller\")",
+      "Bash(yosys -p \"read_verilog -sv src/mem_ctrl.v src/qspi_ctrl.v src/latch_reg.v; synth -top tinyqv_mem_ctrl\")",
+      "Bash(make)",
+      "Bash(python3 -c \"import cocotb; print\\(cocotb.__version__\\)\")",
+      "Read(//home/ktsoupos/.local/bin/**)",
+      "Bash(yosys -p \"read_verilog -sv src/project.v src/tt_mem_bridge.v src/mem_ctrl.v src/qspi_ctrl.v; synth -top tt_um_authQV\")",
+      "Bash(iverilog -g2012 -Wall -o /tmp/authqv_lint.out src/project.v src/tt_mem_bridge.v src/mem_ctrl.v src/qspi_ctrl.v test/tb.v)",
+      "Bash(verilator --lint-only -Wall -Wno-DECLFILENAME --top-module tt_um_authQV src/project.v src/tt_mem_bridge.v src/mem_ctrl.v src/qspi_ctrl.v)",
+      "Bash(yosys -p \"read_verilog -sv src/project.v src/tt_mem_bridge.v src/mem_ctrl.v src/qspi_ctrl.v; hierarchy -check -top tt_um_authQV; proc; check -assert\")"
+    ]
+  }
+}
