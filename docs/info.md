@@ -47,10 +47,16 @@ uio[3] = SCK, uio[6..7] held high (PSRAM CS pins, unused).
 | `0x0100_0000`–`0x0100_FFFF` | FPGA block RAM (R/W)     |
 | `0x8000_0000`+             | FPGA peripherals (GPIO)  |
 
-Supported instructions: full RV32I (ADD/SUB/AND/OR/XOR/SLT, shifts,
-LUI/AUIPC, JAL/JALR, branches, LB/LH/LW/LBU/LHU/SB/SH/SW, ECALL,
-EBREAK, MRET, CSR ops). MUL, Zicond, performance counters, and the
-external interrupt controller live on the FPGA.
+**ISA: RV32E** — the CPU on the FPGA is instantiated with
+`NUM_REGS=16, REG_ADDR_BITS=4`, i.e. only the lower 16 architectural
+registers (`x0`–`x15`). All standard RV32E base instructions are
+supported: ADD/SUB/AND/OR/XOR/SLT, shifts, LUI/AUIPC, JAL/JALR,
+branches, LB/LH/LW/LBU/LHU/SB/SH/SW, ECALL, EBREAK, MRET, and CSR
+read/write/set/clear. Programs must be compiled with `-march=rv32e`
+(or equivalent) so the toolchain never emits references to `x16`–
+`x31`. MUL/Zicond, the C (compressed) extension, performance counters
+(`mcycle`/`minstret`/`mtime`), and the external interrupt controller
+are **not** present — they live on the FPGA if needed at all.
 
 ## How to test
 
