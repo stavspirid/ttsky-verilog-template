@@ -36,19 +36,22 @@ module tinyqv_mem_ctrl (
     // Combinational scheduling
     reg  start_instr;
     reg  start_read;
-    reg  stop_txn;
-    reg  [1:0] data_txn_len;
+    reg  stop_txn;  // stop transaction
+    reg  [1:0] data_txn_len;    // Stores the calculated target length for a data read
 
     wire qspi_busy;
     reg  instr_active;
 
+    // =1 if an instruction is actively being fetched, or if one is about to be scheduled on this exact clock cycle
     wire is_instr      = instr_active || start_instr;
+    // If insn -> 2 bytes, else data read -> 1/2/4 bytes
     wire [1:0] txn_len = is_instr ? 2'b01 : data_txn_len;
+    // MUX to route correct memory address to flash
     wire [23:0] addr_in = is_instr ? {instr_addr, 1'b0} : data_addr;
 
     reg  [31:0] qspi_data_buf;
     reg  [1:0]  qspi_data_byte_idx;
-    wire        qspi_data_ready;
+    wire        qspi_data_ready;    // =1 for 1cycle when a new byte arrives to qspi cntrl
     wire [7:0]  qspi_data_out;
 
     // Stall on the last byte of an instruction (for the prefetch buffer)
@@ -59,15 +62,18 @@ module tinyqv_mem_ctrl (
         start_instr  = 1'b0;
         start_read   = 1'b0;
         stop_txn     = 1'b0;
-        // Decode read length: 00→1B (len=0), 01→2B (len=1), 10→4B (len=3)
+        // Decode read length: 00->1Byte (len=0), 01->2Byte (len=1), 10->4Byte (len=3)
         data_txn_len = {data_read_n[1], data_read_n[1] | data_read_n[0]};
 
         if (qspi_busy) begin
-            if (instr_active) begin
+            if (instr_active) begin // if cur insn is IF
+                // If CPU requests restart && fetch not started yet or fetch is stalled
                 if (instr_fetch_restart && (!instr_fetch_started || stall_txn)) begin
                     stop_txn = 1'b1;
+                // If insn finished rcv 2nd byte || CPU requests a stall
                 end else if ((qspi_data_ready && qspi_data_byte_idx == 2'b01)
                              || instr_fetch_stall) begin
+                    // Checks for pending data read req
                     if (data_read_n != 2'b11) stop_txn = 1'b1;
                 end
             end else if (qspi_data_ready && qspi_data_byte_idx == data_txn_len) begin
@@ -110,10 +116,11 @@ module tinyqv_mem_ctrl (
             instr_fetch_stopped <= 1'b0;
         end else begin
             instr_fetch_started <= start_instr;
-            instr_fetch_stopped <= stop_txn;
+            instr_fetch_stopped <= stop_txn;    // suspected bug : instr_fetch_stopped <= stop_txn && instr_active;
         end
     end
 
+    // Next byte logic signals
     always @(posedge clk) begin
         if (!rstn || start_instr || start_read) begin
             qspi_data_byte_idx <= 2'b00;
@@ -123,13 +130,14 @@ module tinyqv_mem_ctrl (
         end
     end
 
+    // Place incoming byte inside 32-bit buffer
     always @(posedge clk) begin
         if (qspi_data_ready) begin
             qspi_data_buf[{qspi_data_byte_idx, 3'b000} +: 8] <= qspi_data_out;
         end
     end
 
-    assign instr_data  = {qspi_data_out, qspi_data_buf[7:0]};
+    assign instr_data  = {qspi_data_out, qspi_data_buf[7:0]};   // NOTE: why grab live byte here?
     assign instr_ready = instr_active && qspi_data_ready
                          && qspi_data_byte_idx == 2'b01;
 

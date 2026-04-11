@@ -35,16 +35,16 @@ module tt_mem_bridge (
     output reg   [7:0] to_fpga,
 
     // ---- tinyqv_mem_ctrl: instruction fetch ----
-    output reg  [23:1] instr_addr,
-    output reg         instr_fetch_restart,
-    output reg         instr_fetch_stall,
-    input  wire        instr_fetch_started,
+    output reg  [23:1] instr_addr,          // Holds the reconstructed mem address (PC) pointing to the requested CPU instruction 
+    output reg         instr_fetch_restart, // Signals the mem_ctrl to restart an insn fetch sequence
+    output reg         instr_fetch_stall,   // Tells the mem_ctrl to temporarily pause the current insn fetch
+    input  wire        instr_fetch_started, // Insn fetch started via QSPI but not finished yet
     input  wire        instr_fetch_stopped,
     input  wire [15:0] instr_data,
     input  wire        instr_ready,
 
     // ---- tinyqv_mem_ctrl: data read ----
-    output reg  [23:0] data_addr,
+    output reg  [23:0] data_addr,   // Holds the reconstructed memory address for a standard CPU data read request
     output reg   [1:0] data_read_n,
     input  wire        data_ready,
     input  wire [31:0] data_from_read
@@ -65,9 +65,10 @@ module tt_mem_bridge (
             instr_fetch_stall   <= 1'b0;
             instr_addr          <= 23'd0;
             data_addr           <= 24'd0;
-            data_read_n         <= 2'b11;
+            data_read_n         <= 2'b11;   // No read
         end else begin
             case (phase)
+                // Get control signals and begin IF stage (give PC to mem_ctrl)
                 3'd0: begin
                     instr_fetch_restart <= from_fpga[7];
                     instr_fetch_stall   <= from_fpga[6];
@@ -75,6 +76,7 @@ module tt_mem_bridge (
                 end
                 3'd1: instr_addr[17:10] <= from_fpga;
                 3'd2: instr_addr[9:2]   <= from_fpga;
+                // Get last bit of PC and first 6 bits of data read addr
                 3'd3: begin
                     instr_addr[1]    <= from_fpga[7];
                     data_addr[23:18] <= from_fpga[6:1];
@@ -93,6 +95,8 @@ module tt_mem_bridge (
     // -------------------------------------------------------
     // LATCH SINGLE-CYCLE PULSES from the memory controller
     // -------------------------------------------------------
+    // Ensure generated signals or data from mem_ctrl are held stable until 
+    // the FPGA has had a chance to read them.
     reg        started_l, stopped_l, instr_ready_l, data_ready_l;
     reg [15:0] instr_data_l;
     reg [31:0] data_from_read_l;

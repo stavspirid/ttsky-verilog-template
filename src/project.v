@@ -46,7 +46,7 @@ module tt_um_authQV (
     assign uio_oe  = rst_n ? {2'b11, qspi_data_oe[3:2], 1'b1,
                               qspi_data_oe[1:0], 1'b1} : 8'h00;
 
-    // ---- Bridge ↔ memory controller wires ----
+    // ---- Bridge <-> memory controller wires ----
     wire [23:1] instr_addr;
     wire        instr_fetch_restart;
     wire        instr_fetch_stall;
