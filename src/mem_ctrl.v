@@ -36,7 +36,7 @@ module tinyqv_mem_ctrl (
     // Combinational scheduling
     reg  start_instr;
     reg  start_read;
-    reg  stop_txn;  // stop transaction
+    reg  stop_txn;  // wire that ends any QSPI transaction
     reg  [1:0] data_txn_len;    // Stores the calculated target length for a data read
 
     wire qspi_busy;
@@ -103,7 +103,7 @@ module tinyqv_mem_ctrl (
         .addr_in          (addr_in),
         .start_read       (start_read || start_instr),
         .stall_txn        (stall_txn),
-        .stop_txn         (stop_txn),
+        .stop_txn         (stop_txn),   // For both insn fetch or data read
 
         .data_out         (qspi_data_out),
         .data_ready       (qspi_data_ready),
@@ -116,7 +116,7 @@ module tinyqv_mem_ctrl (
             instr_fetch_stopped <= 1'b0;
         end else begin
             instr_fetch_started <= start_instr;
-            instr_fetch_stopped <= stop_txn;    // suspected bug : instr_fetch_stopped <= stop_txn && instr_active;
+            instr_fetch_stopped <= stop_txn && instr_active;    // Insn fetch is interrupted
         end
     end
 
