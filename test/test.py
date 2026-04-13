@@ -1,3 +1,4 @@
+import os
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, ClockCycles
@@ -84,7 +85,7 @@ async def monitor_qspi_tx(dut, mem_ctrl):
 # ==============================================================================
 # TEST 1: The Request Deserializer (FPGA -> Bridge)
 # ==============================================================================
-@cocotb.test()
+@cocotb.test(skip=os.environ.get("GATES") == "yes")
 async def test_bridge_deserialization(dut):
     core = await setup_dut(dut)
     test_instr_addr = 0x5A5A5A 
@@ -100,7 +101,7 @@ async def test_bridge_deserialization(dut):
 # ==============================================================================
 # TEST 2: The Status Catcher (Memory Controller -> Bridge Latches)
 # ==============================================================================
-@cocotb.test()
+@cocotb.test(skip=os.environ.get("GATES") == "yes")
 async def test_bridge_pulse_latching(dut):
     core = await setup_dut(dut)
     await sync_to_phase(dut, core, 2)
@@ -124,7 +125,7 @@ async def test_bridge_pulse_latching(dut):
 # ==============================================================================
 # TEST 3: The Response Serializer (Bridge -> FPGA)
 # ==============================================================================
-@cocotb.test()
+@cocotb.test(skip=os.environ.get("GATES") == "yes")
 async def test_bridge_serialization(dut):
     core = await setup_dut(dut)
     await sync_to_phase(dut, core, 6)
@@ -162,7 +163,7 @@ async def test_bridge_serialization(dut):
 # ==============================================================================
 # TEST 4: Flash Protocol Validation (ASIC -> Flash)
 # ==============================================================================
-@cocotb.test()
+@cocotb.test(skip=os.environ.get("GATES") == "yes")
 async def test_qspi_tx_protocol(dut):
     """Validates that the exact, correct nibbles are driven on the SPI clock edges."""
     core = await setup_dut(dut)

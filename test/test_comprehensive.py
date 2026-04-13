@@ -1,6 +1,8 @@
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, ClockCycles, ReadOnly, Timer
+from cocotb.handle import Force
+from cocotb.types import LogicArray
 
 CS_BIT  = 0
 SD0_BIT = 1
@@ -12,15 +14,15 @@ SD3_BIT = 5
 SAFE_IDLE = 0x70
 
 def get_cs(dut):
-    try: return (int(dut.uio_out.value) >> CS_BIT) & 1
+    try: return (int(dut.user_project.uio_out.value) >> CS_BIT) & 1
     except ValueError: return 1
 
 def get_sck(dut):
-    try: return (int(dut.uio_out.value) >> SCK_BIT) & 1
+    try: return (int(dut.user_project.uio_out.value) >> SCK_BIT) & 1
     except ValueError: return 0
 
 def get_qspi_nibble_out(dut):
-    try: u = int(dut.uio_out.value)
+    try: u = int(dut.user_project.uio_out.value)
     except ValueError: return 0
     return (((u >> SD3_BIT) & 1) << 3 |
             ((u >> SD2_BIT) & 1) << 2 |
@@ -28,12 +30,13 @@ def get_qspi_nibble_out(dut):
             ((u >> SD0_BIT) & 1))
 
 def set_qspi_nibble_in(dut, nibble):
-    try: u = int(dut.uio_in.value)
-    except ValueError: u = 0xFF
-    u &= ~( (1<<5) | (1<<4) | (1<<2) | (1<<1) )
-    u |= ((nibble >> 2) & 3) << 4
-    u |= ((nibble >> 0) & 3) << 1
-    dut.uio_in.value = u
+    if hasattr(dut, 'user_project'):
+        try: u = int(dut.user_project.uio_in.value)
+        except ValueError: u = 0xFF
+        u &= ~( (1<<5) | (1<<4) | (1<<2) | (1<<1) )
+        u |= ((nibble >> 2) & 3) << 4
+        u |= ((nibble >> 0) & 3) << 1
+        dut.user_project.uio_in.value = Force(u)
 
 async def mock_flash(dut, memory):
     prev_sck = 1
@@ -120,7 +123,7 @@ async def setup_dut(dut):
     dut.rst_n.value  = 0
     dut.ena.value    = 1
     dut.ui_in.value  = SAFE_IDLE
-    dut.uio_in.value = 0xFF
+    dut.uio_in.value = 0
     await ClockCycles(dut.clk, 8)
     dut.rst_n.value = 1
     await send_frame(dut, build_frame(fetch_restart=0, fetch_stall=1))
