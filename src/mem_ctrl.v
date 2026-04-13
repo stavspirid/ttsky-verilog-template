@@ -65,7 +65,7 @@ module tinyqv_mem_ctrl (
         // Decode read length: 00->1Byte (len=0), 01->2Byte (len=1), 10->4Byte (len=3)
         data_txn_len = {data_read_n[1], data_read_n[1] | data_read_n[0]};
 
-        if (qspi_busy) begin
+        if (qspi_busy) begin    // Search reasons to stop current transaction
             if (instr_active) begin // if cur insn is IF
                 // If CPU requests restart && fetch not started yet or fetch is stalled
                 if (instr_fetch_restart && (!instr_fetch_started || stall_txn)) begin
@@ -76,10 +76,12 @@ module tinyqv_mem_ctrl (
                     // Checks for pending data read req
                     if (data_read_n != 2'b11) stop_txn = 1'b1;
                 end
+            // Signal the successful end of txn
             end else if (qspi_data_ready && qspi_data_byte_idx == data_txn_len) begin
                 stop_txn = 1'b1;
             end
         end else begin
+            // Data reads take priority over IF
             if (data_read_n != 2'b11)         start_read  = 1'b1;
             else if (instr_fetch_restart)     start_instr = 1'b1;
         end
@@ -137,13 +139,14 @@ module tinyqv_mem_ctrl (
         end
     end
 
-    assign instr_data  = {qspi_data_out, qspi_data_buf[7:0]};   // NOTE: why grab live byte here?
+    assign instr_data  = {qspi_data_out, qspi_data_buf[7:0]};   // NOTE: why grab live byte here? (qspi_data_out)
     assign instr_ready = instr_active && qspi_data_ready
                          && qspi_data_byte_idx == 2'b01;
 
     assign data_ready = !instr_active && qspi_data_ready
                         && qspi_data_byte_idx == data_txn_len;
     assign data_from_read = data_ready
+        // MUX for deifferent byte lengths
         ? {qspi_data_out,
            qspi_data_buf[23:16],
            data_txn_len == 2'b01 ? qspi_data_out : qspi_data_buf[15:8],

@@ -51,6 +51,8 @@ module tt_mem_bridge (
 );
 
     reg [2:0] phase;
+    reg cmd_restart;
+    reg cmd_stall;
     always @(posedge clk) begin
         if (!rstn) phase <= 3'd0;
         else       phase <= phase + 3'd1;
@@ -63,6 +65,8 @@ module tt_mem_bridge (
         if (!rstn) begin
             instr_fetch_restart <= 1'b0;
             instr_fetch_stall   <= 1'b0;
+            cmd_restart          <= 1'b0;
+            cmd_stall            <= 1'b0;
             instr_addr          <= 23'd0;
             data_addr           <= 24'd0;
             data_read_n         <= 2'b11;   // No read
@@ -70,9 +74,13 @@ module tt_mem_bridge (
             case (phase)
                 // Get control signals and begin IF stage (give PC to mem_ctrl)
                 3'd0: begin
-                    instr_fetch_restart <= from_fpga[7];
-                    instr_fetch_stall   <= from_fpga[6];
+                    // instr_fetch_restart <= from_fpga[7];
+                    // instr_fetch_stall   <= from_fpga[6];
+                    instr_fetch_restart <= 1'b0;
                     instr_addr[23:18]   <= from_fpga[5:0];
+                    cmd_restart          <= from_fpga[7];
+                    cmd_stall            <= from_fpga[6];
+
                 end
                 3'd1: instr_addr[17:10] <= from_fpga;
                 3'd2: instr_addr[9:2]   <= from_fpga;
@@ -81,13 +89,18 @@ module tt_mem_bridge (
                     instr_addr[1]    <= from_fpga[7];
                     data_addr[23:18] <= from_fpga[6:1];
                 end
-                3'd4: data_addr[17:10] <= from_fpga;
+                3'd4: begin
+                    data_addr[17:10] <= from_fpga;
+                end
                 3'd5: data_addr[9:2]   <= from_fpga;
                 3'd6: begin
                     data_addr[1:0] <= from_fpga[7:6];
                     data_read_n    <= from_fpga[5:4];
+                    instr_fetch_stall <= cmd_stall;
                 end
-                default: ;
+                3'd7: begin
+                    instr_fetch_restart <= cmd_restart;
+                end
             endcase
         end
     end
