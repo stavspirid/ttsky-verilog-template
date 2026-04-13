@@ -88,6 +88,7 @@ module tt_mem_bridge (
                 3'd3: begin
                     instr_addr[1]    <= from_fpga[7];
                     data_addr[23:18] <= from_fpga[6:1];
+                    instr_fetch_restart <= cmd_restart;
                 end
                 3'd4: begin
                     data_addr[17:10] <= from_fpga;
@@ -99,7 +100,6 @@ module tt_mem_bridge (
                     instr_fetch_stall <= cmd_stall;
                 end
                 3'd7: begin
-                    instr_fetch_restart <= cmd_restart;
                 end
             endcase
         end
