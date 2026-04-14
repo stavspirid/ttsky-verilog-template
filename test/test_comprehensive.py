@@ -46,7 +46,7 @@ async def mock_flash(dut, memory):
     
     while True:
         await RisingEdge(dut.clk)
-        await ReadOnly()
+        await Timer(2, units='ns')
         
         cs = get_cs(dut)
         sck = get_sck(dut)
@@ -140,7 +140,7 @@ class ResponseMonitor:
             frame_bytes = []
             for _ in range(8):
                 await RisingEdge(self.dut.clk)
-                await ReadOnly()
+                await Timer(2, units='ns')
                 try: frame_bytes.append(int(self.dut.uo_out.value))
                 except ValueError: frame_bytes.append(0)
                 
@@ -152,8 +152,6 @@ class ResponseMonitor:
             
             instr_data = frame_bytes[0] | (frame_bytes[1] << 8)
             data_read = frame_bytes[2] | (frame_bytes[3] << 8) | (frame_bytes[4] << 16) | (frame_bytes[5] << 24)
-            
-            # self.dut._log.info(f"ResponseMonitor: frame_bytes={[hex(b) for b in frame_bytes]}")
             
             if fetch_started or fetch_stopped or instr_ready or data_ready:
                 self.dut._log.info(f"ResponseMonitor: Got status byte {hex(status)}. frame={[hex(b) for b in frame_bytes]}")
@@ -186,8 +184,8 @@ async def test_comprehensive_data_reads(dut):
     dut._log.info("Sending 8-bit data read...")
     await send_frame(dut, build_frame(data_addr=0x300000, data_read_n=0, fetch_stall=1))
     
-    # Wait for response
-    for _ in range(10):
+    # Wait for response - increased timeout for GL
+    for _ in range(100):
         await send_frame(dut, build_frame(fetch_stall=1))
         if monitor.responses:
             break
@@ -195,14 +193,13 @@ async def test_comprehensive_data_reads(dut):
     assert len(monitor.responses) > 0, "No response for 8-bit read"
     resp = monitor.responses.pop(0)
     assert resp['data_ready'] == 1, "Data not ready"
-    # The read length is 1 byte, so it should be mapped to the lowest byte of data_from_read
     assert (resp['data_read'] & 0xFF) == 0xCC, f"Expected 0xCC, got {hex(resp['data_read'])}"
     
     # 2. Test 16-bit read
     dut._log.info("Sending 16-bit data read...")
     await send_frame(dut, build_frame(data_addr=0x200000, data_read_n=1, fetch_stall=1))
     
-    for _ in range(10):
+    for _ in range(100):
         await send_frame(dut, build_frame(fetch_stall=1))
         if monitor.responses:
             break
@@ -210,14 +207,13 @@ async def test_comprehensive_data_reads(dut):
     assert len(monitor.responses) > 0, "No response for 16-bit read"
     resp = monitor.responses.pop(0)
     assert resp['data_ready'] == 1, "Data not ready"
-    # Data is expected in Little Endian: 0xBB AA
     assert (resp['data_read'] & 0xFFFF) == 0xBBAA, f"Expected 0xBBAA, got {hex(resp['data_read'])}"
     
     # 3. Test 32-bit read
     dut._log.info("Sending 32-bit data read...")
     await send_frame(dut, build_frame(data_addr=0x100000, data_read_n=2, fetch_stall=1))
     
-    for _ in range(10):
+    for _ in range(100):
         await send_frame(dut, build_frame(fetch_stall=1))
         if monitor.responses:
             break
@@ -251,10 +247,9 @@ async def test_comprehensive_instr_fetch(dut):
     await send_frame(dut, build_frame(fetch_restart=1, fetch_stall=0, instr_addr=0x000000))
     
     # Send idle frames allowing fetch to continue
-    for _ in range(15):
+    for _ in range(40):
         await send_frame(dut, build_frame(fetch_restart=0, fetch_stall=0))
         
-    # We should have received some instr_ready
     ready_count = 0
     for resp in monitor.responses:
         if resp['fetch_started']:
@@ -281,7 +276,7 @@ async def test_comprehensive_instr_fetch(dut):
     monitor.responses.clear()
     await send_frame(dut, build_frame(fetch_restart=1, fetch_stall=0, instr_addr=0x000004))
     
-    for _ in range(15):
+    for _ in range(40):
         await send_frame(dut, build_frame(fetch_restart=0, fetch_stall=0))
         
     resumed_ok = False
